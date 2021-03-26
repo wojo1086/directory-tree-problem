@@ -3,16 +3,17 @@ import {LinkedList} from './classes/linked-list.class';
 import {ListNode} from './classes/list-node.class';
 
 enum COMMAND_ENUM {
-    CREATE = 'create',
-    LIST = 'list',
-    MOVE = 'move',
-    DELETE = 'delete'
+    CREATE = 'CREATE',
+    LIST = 'LIST',
+    MOVE = 'MOVE',
+    DELETE = 'DELETE'
 }
 
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
-    styleUrls: ['./app.component.sass']
+    styleUrls: ['./app.component.sass'],
+    preserveWhitespaces: true
 })
 export class AppComponent implements OnInit {
     private readonly commandLines: string[] = [
@@ -33,7 +34,7 @@ export class AppComponent implements OnInit {
         'DELETE 2020/work/certemy',
         'LIST'
     ];
-    private mockDir = [];
+    private mockDir = {};
     outputLines: string[] = [];
 
     ngOnInit(): void {
@@ -44,47 +45,85 @@ export class AppComponent implements OnInit {
         this.clearOutputLines();
         this.commandLines.forEach(commandLine => {
             const [command, ...args] = commandLine.split(' ');
-            const lowerCaseCommand = command.toLowerCase();
+            let splitArgs = [];
             switch (true) {
-                case lowerCaseCommand === COMMAND_ENUM.CREATE:
-                    const splitArgs = args[0].split('/');
-                    this.create(splitArgs);
+                case command === COMMAND_ENUM.CREATE:
+                    splitArgs = args[0].split('/');
+                    this.create(splitArgs, this.mockDir);
+                    this.outputLines.push(`${COMMAND_ENUM.CREATE} ${args[0]}`);
+                    break;
+                case command === COMMAND_ENUM.LIST:
+                    this.outputLines.push(COMMAND_ENUM.LIST);
+                    this.list(this.mockDir, 0);
+                    break;
+                case command === COMMAND_ENUM.DELETE:
+                    this.outputLines.push(`${COMMAND_ENUM.DELETE} ${args[0]}`);
+                    splitArgs = args[0].split('/');
+                    this.delete(splitArgs, this.mockDir, 0);
+                    break;
+                case command === COMMAND_ENUM.MOVE:
+                default:
+                    const from = args[0].split('/');
+                    const to = args[1].split('/');
+                    this.move(from, to, this.mockDir);
+                    break;
             }
         });
     }
 
-    private create(dir: string[]): void {
-        if (!dir[0]) {
+    private create(structure: string[], dir): void {
+        const parent = structure.shift();
+        if (!parent) {
             return;
         }
-        const parent = dir.shift();
-        const foundNode = this.findInMockDir(parent);
-        if (!foundNode) {
-            const node = new ListNode(parent);
-            this.mockDir.push(new LinkedList(node));
-        } else {
-            // this.create(children.join('/'));
+        if (!dir.hasOwnProperty(parent)) {
+            dir[parent] = {};
         }
-        console.log(this.mockDir);
+        this.create(structure, dir[parent]);
     }
 
-    private move(from: string, to: string): void {
+    private move(from: string[], to: string[], dir): void {
         console.log(from, to);
+        const newKey = from[from.length - 1];
+        const fromObj = this.getDir(from, dir, false);
+        const toObj = this.getDir(to, dir, true);
+        // toObj[newKey] = fromObj;
+        console.log(fromObj, toObj);
     }
 
-    private list(): void {
-
+    private list(structure, spaces): void {
+        Object.keys(structure).forEach(key => {
+            const paddedString = new Array(spaces).fill('&nbsp;').join('');
+            this.outputLines.push(paddedString + key);
+            this.list(structure[key], spaces + 2);
+        });
     }
 
-    private delete(dir: string): void {
+    private delete(structure: string[], dir, index): void {
+        const file = dir[structure[index]];
+        if (!dir[file]) {
+            this.outputLines.push(`Cannot delete ${structure.join('/')} - ${structure[index]} does not exist`);
+        }
 
-    }
-
-    private findInMockDir(dir: string): ListNode | undefined {
-        return this.mockDir.find(node => node.data === dir);
+        // let dirToDelete = dir;
+        // structure.forEach(file => {
+        //     dirToDelete = dirToDelete[file];
+        // });
+        // console.log(dirToDelete);
     }
 
     private clearOutputLines(): void {
         this.outputLines = [];
+    }
+
+    private getDir(arr: string[], dir, includeLastIndex: boolean): any {
+        let obj = dir;
+        let fromIndex = includeLastIndex ? arr.length : (arr.length - 1 >= 0 ? arr.length - 1 : 0);
+        while (fromIndex) {
+            const file = arr.shift();
+            obj = obj[file];
+            fromIndex--;
+        }
+        return obj;
     }
 }
