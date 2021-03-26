@@ -65,6 +65,7 @@ export class AppComponent implements OnInit {
                 default:
                     const from = args[0].split('/');
                     const to = args[1].split('/');
+                    this.outputLines.push(`${COMMAND_ENUM.MOVE} ${args[0]} ${args[1]}`);
                     this.move(from, to, this.mockDir);
                     break;
             }
@@ -83,16 +84,15 @@ export class AppComponent implements OnInit {
     }
 
     private move(from: string[], to: string[], dir): void {
-        console.log(from, to);
         const newKey = from[from.length - 1];
         const fromObj = this.getDir(from, dir, false);
         const toObj = this.getDir(to, dir, true);
-        // toObj[newKey] = fromObj;
-        console.log(fromObj, toObj);
+        toObj[newKey] = {...fromObj[newKey]};
+        delete fromObj[newKey];
     }
 
     private list(structure, spaces): void {
-        Object.keys(structure).forEach(key => {
+        Object.keys(structure).sort().forEach(key => {
             const paddedString = new Array(spaces).fill('&nbsp;').join('');
             this.outputLines.push(paddedString + key);
             this.list(structure[key], spaces + 2);
@@ -100,16 +100,16 @@ export class AppComponent implements OnInit {
     }
 
     private delete(structure: string[], dir, index): void {
-        const file = dir[structure[index]];
-        if (!dir[file]) {
+        const item = this.getDir(structure, dir, false);
+        if (!item) {
             this.outputLines.push(`Cannot delete ${structure.join('/')} - ${structure[index]} does not exist`);
+        } else {
+            const deleteKey = structure[structure.length - 1];
+            const poppedArray = [...structure];
+            poppedArray.pop();
+            const parentDir = this.getDir(poppedArray, dir, true);
+            delete parentDir[deleteKey];
         }
-
-        // let dirToDelete = dir;
-        // structure.forEach(file => {
-        //     dirToDelete = dirToDelete[file];
-        // });
-        // console.log(dirToDelete);
     }
 
     private clearOutputLines(): void {
@@ -118,11 +118,18 @@ export class AppComponent implements OnInit {
 
     private getDir(arr: string[], dir, includeLastIndex: boolean): any {
         let obj = dir;
+        const arrCopy = [...arr];
         let fromIndex = includeLastIndex ? arr.length : (arr.length - 1 >= 0 ? arr.length - 1 : 0);
         while (fromIndex) {
-            const file = arr.shift();
-            obj = obj[file];
-            fromIndex--;
+            const file = arrCopy.shift();
+            if (!obj) {
+                obj = undefined;
+                fromIndex = 0;
+            } else {
+                obj = obj[file];
+                fromIndex--;
+            }
+
         }
         return obj;
     }
