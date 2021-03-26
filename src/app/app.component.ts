@@ -55,15 +55,15 @@ export class AppComponent implements OnInit {
             switch (true) {
                 case command === COMMAND_ENUM.CREATE:
                     splitArgs = args[0].split('/'); // Create an array of arguments to pass into the create method
-                    this.outputLines.push(`${COMMAND_ENUM.CREATE} ${args[0]}`); // Add the command we just ran to the outputs array
+                    this.addToOutput(`${COMMAND_ENUM.CREATE} ${args[0]}`); // Add the command we just ran to the outputs array
                     this.create(splitArgs, this.mockDir);
                     break;
                 case command === COMMAND_ENUM.LIST:
-                    this.outputLines.push(COMMAND_ENUM.LIST); // Add the command we just ran to the outputs array
+                    this.addToOutput(COMMAND_ENUM.LIST); // Add the command we just ran to the outputs array
                     this.list(this.mockDir, 0);
                     break;
                 case command === COMMAND_ENUM.DELETE:
-                    this.outputLines.push(`${COMMAND_ENUM.DELETE} ${args[0]}`); // Add the command we just ran to the outputs array
+                    this.addToOutput(`${COMMAND_ENUM.DELETE} ${args[0]}`); // Add the command we just ran to the outputs array
                     splitArgs = args[0].split('/'); // Create an array of arguments to pass into the delete method
                     this.delete(splitArgs, this.mockDir);
                     break;
@@ -72,7 +72,7 @@ export class AppComponent implements OnInit {
                     // When doing a move command, there are two arguments, we need to split both of them
                     const from = args[0].split('/');
                     const to = args[1].split('/');
-                    this.outputLines.push(`${COMMAND_ENUM.MOVE} ${args[0]} ${args[1]}`); // Add the command we just ran to the outputs array
+                    this.addToOutput(`${COMMAND_ENUM.MOVE} ${args[0]} ${args[1]}`); // Add the command we just ran to the outputs array
                     this.move(from, to, this.mockDir);
                     break;
             }
@@ -138,7 +138,7 @@ export class AppComponent implements OnInit {
             // I know this might seem weird, but it seemed the easiest to create a string of n number of spaces
             // while dealing with the issue of the browser/Angular stripping whitespaces
             const paddedString = new Array(spaces).fill('&nbsp;').join('');
-            this.outputLines.push(paddedString + child.path);
+            this.addToOutput(paddedString + child.path);
             this.list(child, spaces + 2);
         });
     }
@@ -156,7 +156,7 @@ export class AppComponent implements OnInit {
             const currentPath = pathsCopy.shift();
             currentNode = currentNode.find(currentPath);
             if (!currentNode) {
-                this.outputLines.push(`Cannot delete ${paths.join('/')} - ${currentPath} does not exist`);
+                this.addToOutput(`Cannot delete ${paths.join('/')} - ${currentPath} does not exist`);
                 break;
             }
         }
@@ -189,5 +189,14 @@ export class AppComponent implements OnInit {
             return -1;
         }
         return 0;
+    }
+
+    /**
+     * Adds the passed in string to the output display
+     * @param val
+     * @private
+     */
+    private addToOutput(val: string): void {
+        this.outputLines.push(val);
     }
 }
